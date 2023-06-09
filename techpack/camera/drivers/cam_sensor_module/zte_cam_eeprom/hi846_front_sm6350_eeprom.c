@@ -657,7 +657,7 @@ static int hi846_front_sm6350_read_eeprom_memory(struct cam_eeprom_ctrl_t *e_ctr
 			i2c_reg_array.delay = emap[j].pageen.delay;
 			i2c_reg_settings.reg_setting = &i2c_reg_array;
 			rc = camera_io_dev_write(&e_ctrl->io_master_info,
-				&i2c_reg_settings);
+				&i2c_reg_settings, false);
 			if (rc) {
 				pr_err( "page enable failed rc %d",rc);
 				return rc;
@@ -701,7 +701,7 @@ static int hi846_front_sm6350_read_eeprom_memory(struct cam_eeprom_ctrl_t *e_ctr
 			i2c_reg_array.delay = emap[j].pageen.delay;
 			i2c_reg_settings.reg_setting = &i2c_reg_array;
 			rc = camera_io_dev_write(&e_ctrl->io_master_info,
-				&i2c_reg_settings);
+				&i2c_reg_settings, false);
 			if (rc) {
 				pr_err("page disable failed rc %d",rc);
 				return rc;
