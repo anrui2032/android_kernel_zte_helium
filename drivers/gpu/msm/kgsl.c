@@ -5224,6 +5224,9 @@ static void _unregister_device(struct kgsl_device *device)
 	mutex_unlock(&kgsl_driver.devlock);
 }
 
+#ifdef CONFIG_ZTE_LCD_HBM_CTRL
+extern struct kgsl_device *ksgl_uevent_device;
+#endif
 static int _register_device(struct kgsl_device *device)
 {
 	static u64 dma_mask = DMA_BIT_MASK(64);
@@ -5262,6 +5265,9 @@ static int _register_device(struct kgsl_device *device)
 		return ret;
 	}
 
+#ifdef CONFIG_ZTE_LCD_HBM_CTRL
+	ksgl_uevent_device = device;
+#endif
 	device->dev->dma_mask = &dma_mask;
 	arch_setup_dma_ops(device->dev, 0, 0, NULL, false);
 
