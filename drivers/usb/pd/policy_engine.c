@@ -3,6 +3,8 @@
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
+#define DEBUG 1
+
 #include <linux/completion.h>
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
@@ -382,6 +384,7 @@ struct usbpd {
 	struct work_struct	sm_work;
 	struct work_struct	start_periph_work;
 	struct work_struct	restart_host_work;
+	struct delayed_work	reselect_pdo_work;
 	struct hrtimer		timer;
 	bool			sm_queued;
 
@@ -399,6 +402,9 @@ struct usbpd {
 	u8			selected_pdo;
 	u8			requested_pdo;
 	u32			rdo;	/* can be either source or sink */
+	int			last_pdo;
+	int			last_uv;
+	int			last_ua;
 	int			current_voltage;	/* uV */
 	int			requested_voltage;	/* uV */
 	int			requested_current;	/* mA */
@@ -867,6 +873,7 @@ static int pd_select_pdo(struct usbpd *pd, int pdo_pos, int uv, int ua)
 			PD_SRC_PDO_FIXED_VOLTAGE(pdo) * 50 * 1000;
 		pd->rdo = PD_RDO_FIXED(pdo_pos, 0, mismatch, 1, 1, curr / 10,
 				max_current / 10);
+		cancel_delayed_work(&pd->reselect_pdo_work);
 	} else if (type == PD_SRC_PDO_TYPE_AUGMENTED) {
 		if ((uv / 100000) > PD_APDO_MAX_VOLT(pdo) ||
 			(uv / 100000) < PD_APDO_MIN_VOLT(pdo) ||
@@ -880,6 +887,11 @@ static int pd_select_pdo(struct usbpd *pd, int pdo_pos, int uv, int ua)
 		pd->requested_voltage = uv;
 		pd->rdo = PD_RDO_AUGMENTED(pdo_pos, mismatch, 1, 1,
 				uv / 20000, ua / 50000);
+		pd->last_pdo = pdo_pos;
+		pd->last_uv = uv;
+		pd->last_ua = ua;
+		cancel_delayed_work(&pd->reselect_pdo_work);
+		schedule_delayed_work(&pd->reselect_pdo_work, msecs_to_jiffies(10000));
 	} else {
 		usbpd_err(&pd->dev, "Only Fixed or Programmable PDOs supported\n");
 		return -ENOTSUPP;
@@ -896,6 +908,7 @@ static int pd_eval_src_caps(struct usbpd *pd)
 	int i;
 	union power_supply_propval val;
 	bool pps_found = false;
+	bool sqc_found = false;
 	u32 first_pdo = pd->received_pdos[0];
 
 	if (PD_SRC_PDO_TYPE(first_pdo) != PD_SRC_PDO_TYPE_FIXED) {
@@ -918,14 +931,22 @@ static int pd_eval_src_caps(struct usbpd *pd)
 					PD_SRC_PDO_TYPE_AUGMENTED) &&
 				!PD_APDO_PPS(pd->received_pdos[i])) {
 				pps_found = true;
-				break;
+				/* if max voltage >= 10V, and max current >= 5A */
+				if ((PD_APDO_MAX_VOLT(pd->received_pdos[i]) * 100 >= 10*1000) &&
+					(PD_APDO_MAX_CURR(pd->received_pdos[i]) * 50 >= 5000)) {
+					sqc_found = true;
+					break;
+				}
 			}
 		}
 	}
 
 	val.intval = pps_found ?
-			POWER_SUPPLY_PD_PPS_ACTIVE :
+			(sqc_found ?
+				POWER_SUPPLY_PD_SQC_ACTIVE :
+				POWER_SUPPLY_PD_PPS_ACTIVE) :
 			POWER_SUPPLY_PD_ACTIVE;
+
 	power_supply_set_property(pd->usb_psy,
 			POWER_SUPPLY_PROP_PD_ACTIVE, &val);
 
@@ -4083,6 +4104,48 @@ static int usbpd_uevent(struct device *dev, struct kobj_uevent_env *env)
 	return 0;
 }
 
+static void usbpd_reselect_pdo_work(struct work_struct *work)
+{
+	struct usbpd *pd = container_of(work, struct usbpd, reselect_pdo_work.work);
+	int ret;
+
+	usbpd_err(&pd->dev, "hvdcp not send pps pdo in time, we send\n");
+	mutex_lock(&pd->swap_lock);
+	/* Only allowed if we are already in explicit sink contract */
+	if (pd->current_state != PE_SNK_READY) {
+		usbpd_err(&pd->dev, "Cannot select new PDO yet\n");
+		ret = -EBUSY;
+		goto out;
+	}
+
+	ret = pd_select_pdo(pd, pd->last_pdo, pd->last_uv, pd->last_ua);
+	if (ret)
+		goto out;
+
+	reinit_completion(&pd->is_ready);
+	pd->send_request = true;
+	kick_sm(pd, 0);
+
+	/* wait for operation to complete */
+	if (!wait_for_completion_timeout(&pd->is_ready,
+			msecs_to_jiffies(1000))) {
+		usbpd_err(&pd->dev, "request timed out\n");
+		ret = -ETIMEDOUT;
+		goto out;
+	}
+
+	/* determine if request was accepted/rejected */
+	if (pd->selected_pdo != pd->requested_pdo ||
+			pd->current_voltage != pd->requested_voltage) {
+		usbpd_err(&pd->dev, "request rejected\n");
+		ret = -ECONNREFUSED;
+	}
+
+out:
+	pd->send_request = false;
+	mutex_unlock(&pd->swap_lock);
+}
+
 static ssize_t contract_show(struct device *dev, struct device_attribute *attr,
 		char *buf)
 {
@@ -4738,6 +4801,7 @@ struct usbpd *usbpd_create(struct device *parent)
 	INIT_WORK(&pd->sm_work, usbpd_sm);
 	INIT_WORK(&pd->start_periph_work, start_usb_peripheral_work);
 	INIT_WORK(&pd->restart_host_work, restart_usb_host_work);
+	INIT_DELAYED_WORK(&pd->reselect_pdo_work, usbpd_reselect_pdo_work);
 	hrtimer_init(&pd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	pd->timer.function = pd_timeout;
 	mutex_init(&pd->swap_lock);
