@@ -43,6 +43,12 @@
 #include "objsec.h"
 #include "conditional.h"
 
+/* Preproc/postproc policy as binary image */
+#if defined(CONFIG_SECURITY_SELINUX_POLICYPROC)
+#include "ss/policyproc.h"
+#include <vendor/soc/qcom/vendor_cfg_helper.h>
+#endif /* CONFIG_SECURITY_SELINUX_POLICYPROC */
+
 enum sel_inos {
 	SEL_ROOT_INO = 2,
 	SEL_LOAD,	/* load policy */
@@ -414,6 +420,16 @@ static int sel_open_policy(struct inode *inode, struct file *filp)
 	if (rc)
 		goto err;
 
+/* Preproc/postproc policy as binary image */
+#if defined(CONFIG_SECURITY_SELINUX_POLICYPROC)
+	if (request_privilege_state()) {
+		rc = pp_postproc_policy(&plm->data, &plm->len);
+		if (rc) {
+			goto err;
+		}
+	}
+#endif /* CONFIG_SECURITY_SELINUX_POLICYPROC */
+
 	fsi->policy_opened = 1;
 
 	filp->private_data = plm;
@@ -570,6 +586,15 @@ static ssize_t sel_write_load(struct file *file, const char __user *buf,
 		length = -EFAULT;
 		goto out;
 	}
+
+/* Preproc/postproc policy as binary image */
+#if defined(CONFIG_SECURITY_SELINUX_POLICYPROC)
+	if (request_privilege_state()) {
+		if (pp_preproc_policy(&data, &count) != 0) {
+			goto out;
+		}
+	}
+#endif /* CONFIG_SECURITY_SELINUX_POLICYPROC */
 
 	length = security_load_policy(fsi->state, data, count);
 	if (length) {
