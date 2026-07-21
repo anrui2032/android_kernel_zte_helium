@@ -42,6 +42,9 @@
 #include "sde_power_handle.h"
 #include "sde_core_perf.h"
 #include "sde_trace.h"
+#ifdef CONFIG_ZTE_LCD_E1_PANEL
+#include<linux/sched.h>
+#endif
 
 #define SDE_PSTATES_MAX (SDE_STAGE_MAX * 4)
 #define SDE_MULTIRECT_PLANE_MAX (SDE_STAGE_MAX * 2)
@@ -4684,7 +4687,16 @@ static int _sde_crtc_check_get_pstates(struct drm_crtc *crtc,
 				SDE_ERROR(
 					"r1 only virt plane:%d not supported\n",
 					pipe_staged[i]->plane->base.id);
+#ifdef CONFIG_ZTE_LCD_E1_PANEL
+				SDE_ERROR(
+					"MSM_LCD check current->comm = %s\n",
+					current->comm);
+				if (strcmp(current->comm, "zte_ftm")) {
+					return -EINVAL;
+				}
+#else
 				return -EINVAL;
+#endif
 			}
 			sde_plane_clear_multirect(pipe_staged[i]);
 		}
