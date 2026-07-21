@@ -22,6 +22,10 @@
 *.gcno
 *.gz
 *.i
+!drivers/vendor/common/touchscreen/focaltech_touch_V2_2/include/pramboot/*.i
+!drivers/vendor/common/touchscreen/focaltech_touch_V2_2/include/firmware/*.i
+!drivers/vendor/common/touchscreen/focaltech_touch_v3/include/pramboot/*.i
+!drivers/vendor/common/touchscreen/focaltech_touch_v3/include/firmware/*.i
 *.ko
 *.lex.c
 *.ll
