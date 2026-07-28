@@ -1,0 +1,160 @@
+&lpi_tlmm {
+	/delete-property/ qcom,lpi-slew-base-tbl;
+};
+
+&pm7250b_charger {
+	/delete-property/ qcom,hvdcp3-standalone-config;
+	qcom,thermal-mitigation = <6180000 6180000 6180000
+		6180000 5000000 5000000 4000000 3500000
+		3000000 2000000 1000000 6180000 5000000
+		5000000 4000000 4000000 4000000 3000000
+		2000000 1000000 500000 300000 3000000
+		2000000 1750000 1500000 1250000 1000000
+		750000 500000 400000 300000 100000
+		300000 300000 300000 300000 300000
+		300000 300000 300000 100000 100000
+		100000>;
+	qcom,fcc-max-ua = <6180000>;
+	qcom,fv-max-uv = <4480000>;
+	qcom,usb-icl-ua = <2500000>;
+	qcom,chg-term-src = <1>;
+	qcom,chg-term-current-ma = <4294966316>;
+	qcom,lpd-disable;
+	support-change-fv = <1>;
+	qg-iterm-ma-hvdcp = <1840>;
+	fv-max-uv-dcp = <4480000>;
+	chg-term-current-ma-dcp = <4294966316>;
+	qg-iterm-ma-dcp = <1840>;
+};
+
+&pm7250b_qg {
+	qcom,vbatt-cutoff-mv = <3400>;
+	qcom,qg-ext-sns;
+	qcom,rbat-conn-mohm = <2>;
+	qcom,cl-min-start-soc = <1>;
+	qcom,cl-max-start-soc = <30>;
+	qcom,cl-min-temp = <150>;
+	qcom,cl-max-temp = <450>;
+	qcom,cl-max-increment = <20>;
+	qcom,cl-max-decrement = <20>;
+	qcom,cl-min-limit = <300>;
+	qcom,cl-max-limit = <0>;
+};
+
+&pm7250b_gpios {
+	smb_stat {
+		smb_stat_default: smb_stat_default {
+			pins = "gpio6";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			qcom,pull-up-strength = <0>;
+			power-source = <0>;
+		};
+	};
+};
+
+&dsi_nt35695b_truly_fhd_video {
+	/delete-property/ qcom,esd-check-enabled;
+	/delete-property/ qcom,mdss-dsi-panel-status-check-mode;
+	/delete-property/ qcom,mdss-dsi-panel-status-command;
+	/delete-property/ qcom,mdss-dsi-panel-status-command-state;
+	/delete-property/ qcom,mdss-dsi-panel-status-value;
+	/delete-property/ qcom,mdss-dsi-panel-on-check-value;
+	/delete-property/ qcom,mdss-dsi-panel-status-read-length;
+	/delete-property/ qcom,dsi-supported-dfps-list;
+	/delete-property/ qcom,mdss-dsi-pan-enable-dynamic-fps;
+	/delete-property/ qcom,mdss-dsi-pan-fps-update;
+	/delete-property/ qcom,mdss-dsi-min-refresh-rate;
+	/delete-property/ qcom,mdss-dsi-max-refresh-rate;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
+	qcom,mdss-brightness-max-level = <255>;
+	qcom,platform-te-gpio = <&tlmm 10 0>;
+	qcom,platform-reset-gpio = <&pm8150l_gpios 3 0>;
+	qcom,ulps-enabled;
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 23 09 09 26 24 09 09 06 02 04 00 1d 19];
+			qcom,mdss-dsi-panel-clockrate = <1050000000>;
+		};
+	};
+};
+
+#include "zte-helium-pinctrl.dtsi"
+#include "zte-helium-vendor-imem.dtsi"
+
+&soc {
+	gpio_keys {
+		vol_down {
+			label = "volume_down";
+			gpios = <&pm8150l_gpios 6 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEDOWN>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+};
+
+#include "zte-helium-charger.dtsi"
+
+&ufshc_mem {
+	spm-level = <3>;
+};
+
+&qupv3_se8_i2c {
+	status = "ok";
+	tfa98xx@34 {
+		compatible = "nxp,tfa9894";
+		reg = <0x34>;
+		reset-gpio = <&tlmm 125 0x00>;
+	};
+
+	tfa98xx@35 {
+		compatible = "nxp,tfa9894";
+		reg = <0x35>;
+		reset-gpio = <&tlmm 126 0x00>;
+	};
+};
+
+&soc {
+	batt_cap_learn {
+		bcl_battery_count0 {
+			bcl,battery-real-capacity = <3790000>;
+			bcl,battery-rated-capacity = <4120000>;
+			bcl,battery-limit-charge-voltage = <4480>;
+		};
+	};
+
+	hall_sensor {
+		compatible = "ah,hall_ic";
+		vddio-supply = <&pm8150a_l8>;
+		linux,min-uv = <1800000>;
+		linux,max-uv = <1800000>;
+		ah,gpio_irq = <&tlmm 0x6b 0x0>;
+		linux,name = "hall_sensor";
+	};
+
+	charge_arbitrate_service {
+		cas,normal-topoff = <10>;
+		cas,abnormal-topoff = <12>;
+		cas,age-data = <100 4480000 6180000 99 93 0 0
+				90 4460000 5800000 98 92 0 0
+				85 4440000 5500000 97 91 0 0
+				80 4410000 5200000 96 90 0 0
+				75 4390000 4900000 95 89 0 0
+				70 4370000 4600000 94 88 0 0>;
+	};
+
+	cpu_rate_service {
+		status = "disabled";
+	};
+};
+
+#include "zte-helium-nfc.dtsi"
+#include "zte-helium-camera.dtsi"
+#include "zte-helium-thermal.dtsi"
+#include "zte-helium-touchscreen.dtsi"
+#include "zte-helium-fingerprint.dtsi"

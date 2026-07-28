@@ -19,6 +19,15 @@
 #include "dsi-panel-sim-dualmipi-dsc375-cmd.dtsi"
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
 #include "dsi-panel-rm69299-visionox-fhd-plus-video.dtsi"
+#include "dsi-panel-zte-visionox-rm692a4-otpt3-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692a4-nootp-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692a4-amoled-fhd-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692a9-amoled-fhd-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692c9-amoled-fhd-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692c9-amoled-fhd-10bit-dsc-cmd.dtsi"
+#include "dsi-panel-zte-visionox-rm692c9-amoled-fhd-10bit-dsc-90hz-cmd.dtsi"
+#include "dsi-panel-zte-dijing-ili7807g-jdi-video.dtsi"
+#include "dsi-panel-zte-tianma-hx83112a-video.dtsi"
 #include "dsi-panel-r66451-dsc-fhd-plus-144hz-cmd.dtsi"
 #include <dt-bindings/clock/mdss-7nm-pll-clk.h>
 
