@@ -1,0 +1,19 @@
+&soc {
+	goodix_fp {
+		status = "ok";
+		compatible = "goodix,fingerprint";
+		spi-max-frequency = <4800000>;
+		qcom,qup-id = <3>;
+		reg = <0x0>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <112 0x2008>;
+		pinctrl-names = "goodix_active", "goodix_suspend", "pwr_active";
+		pinctrl-0 = <&fp_shutdown_active>;
+		pinctrl-1 = <&fp_shutdown_suspend>;
+		pinctrl-2 = <&goodix_pwr_active>;
+		fp-gpio-reset = <&tlmm 0x3a 0x00>;
+		fp-gpio-irq = <&tlmm 112 0x2008>;
+		goodix,gpio_pwr = <&tlmm 5 0x1>;
+		interrupt-names = "goodix_wake_up";
+	};
+};

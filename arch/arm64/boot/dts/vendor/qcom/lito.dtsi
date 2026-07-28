@@ -35,6 +35,8 @@
 		swr2 = &swr2;
 		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
 		sdhc2 = &sdhc_2; /* SDC2 SD Card slot */
+		i2c0 = &qupv3_se0_i2c;
+		i2c8 = &qupv3_se8_i2c;
 	};
 
 	cpus {
@@ -367,7 +369,7 @@
 
 		qtee_apps_mem: qtee_apps_region@81e00000 {
 			no-map;
-			reg = <0x0 0x81e00000 0x0 0x2600000>;
+			reg = <0x0 0x81e00000 0x0 0x4200000>;
 		};
 
 		pil_camera_mem: pil_camera_region@86000000 {
@@ -517,6 +519,11 @@
 			linux,cma-default;
 		};
 
+		pstore_mem: pstore_region@B93FF000 {
+			compatible = "removed-dma-pool";
+			no-map;
+			reg = <0x0 0xb93ff000 0x0 0x200000>;
+		};
 	};
 
 	chosen {
@@ -1257,7 +1264,7 @@
 
 	qcom_seecom: qseecom@82200000 {
 		compatible = "qcom,qseecom";
-		reg = <0x82200000 0x2200000>;
+		reg = <0x82200000 0x3e00000>;
 		reg-names = "secapp-region";
 		memory-region = <&qseecom_mem>;
 		qcom,hlos-num-ce-hw-instances = <1>;
@@ -1273,7 +1280,7 @@
 
 	qcom_smcinvoke: smcinvoke@82200000 {
 		compatible = "qcom,smcinvoke";
-		reg = <0x82200000 0x2200000>;
+		reg = <0x82200000 0x3e00000>;
 		reg-names = "secapp-region";
 	};
 
@@ -3700,6 +3707,20 @@
 		qcom,smem-state-names = "qcom,force-stop";
 	};
 
+	ramoops {
+		compatible = "ramoops";
+		reg = <0xb93ff000 0x200000>;
+		memory-region = <&pstore_mem>;
+		unbuffered;
+		no-dump-oops;
+		record-size = <0x1000>;
+		console-size = <0x100000>;
+		ftrace-size = <0x40000>;
+		pmsg-size = <0x40000>;
+		ecc-size = <0x0>;
+		flags = <1>;
+	};
+
 	qfprom: qfprom@780000 {
 		compatible = "qcom,qfprom";
 		reg = <0x00780000 0x7000>;
@@ -3895,35 +3916,17 @@
 };
 
 &pm8008_regulators {
-	vdd_l1_l2-supply = <&S8C>;
-	vdd_l3_l4-supply = <&BOB>;
+	vdd_l1-supply = <&S8C>;
 	vdd_l5-supply = <&BOB>;
-	vdd_l6-supply = <&S5A>;
 	vdd_l7-supply = <&S5A>;
+	vdd_l6-supply = <&S5A>;
 };
 
 &L1P {
+	regulator-min-microvolt = <528000>;
 	regulator-max-microvolt = <1056000>;
 	/* Reduced the headroom by 16mV for AHC */
 	qcom,min-dropout-voltage = <209000>;
-};
-
-&L2P {
-	regulator-max-microvolt = <1104000>;
-	/* Reduced the headroom by 16mV for AHC */
-	qcom,min-dropout-voltage = <209000>;
-};
-
-&L3P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2800000>;
-	qcom,min-dropout-voltage = <136000>;
-};
-
-&L4P {
-	regulator-min-microvolt = <2800000>;
-	regulator-max-microvolt = <2904000>;
-	qcom,min-dropout-voltage = <160000>;
 };
 
 &L5P {
@@ -3932,14 +3935,37 @@
 	qcom,min-dropout-voltage = <300000>;
 };
 
-&L6P {
-	regulator-max-microvolt = <1800000>;
-	qcom,min-dropout-voltage = <184000>;
-};
-
 &L7P {
 	regulator-max-microvolt = <1800000>;
 	qcom,min-dropout-voltage = <200000>;
+};
+
+&spkr_1_sd_n_sleep {
+	mux {
+		/delete-property/ pins;
+	};
+
+	config {
+		/delete-property/ pins;
+	};
+};
+
+&spkr_1_sd_n_active {
+	mux {
+		/delete-property/ pins;
+	};
+
+	config {
+		/delete-property/ pins;
+	};
+};
+
+&pm8008_regulators {
+	/delete-property/ vdd_l6-supply;
+};
+
+&usb2_phy0 {
+	/delete-property/ qcom,param-override-seq;
 };
 #include "lito-sde.dtsi"
 #include "lito-sde-pll.dtsi"

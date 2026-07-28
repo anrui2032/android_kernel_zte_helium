@@ -167,6 +167,13 @@ config ARCH_LITO
 	  This enables support for the LITO chipset. If you do not
 	  wish to build a kernel that runs on this chipset, say 'N' here.
 
+config ARCH_ZTE_HELIUM
+	bool "Helium Board"
+	depends on ARCH_LITO
+	help
+	  Support for the ZTE Axon 20 5G
+	  which is based on QCOM LITO chipset.
+
 config ARCH_LAGOON
 	bool "Enable Support for Qualcomm Technologies, Inc. LAGOON"
 	depends on ARCH_QCOM

@@ -35,6 +35,23 @@
 			"pm8150l_gpio9", "pm8150l_gpio10",
 			"pm8150l_gpio11", "pm8150l_gpio12";
 
+	gpio4_dig_out {
+		gpio4_dig_out_enable: gpio4_dig_out_enable {
+			pins = "gpio4";
+			function = "normal";
+			bias-pull-up;
+			power-source = <0>;
+			output-high;
+		};
+
+		gpio4_dig_out_disable: gpio4_dig_out_disable {
+			pins = "gpio4";
+			function = "normal";
+			power-source = <0>;
+			bias-high-impedance;
+		};
+	};
+
 	key_vol_up {
 		key_vol_up_default: key_vol_up_default {
 			pins = "gpio5";
