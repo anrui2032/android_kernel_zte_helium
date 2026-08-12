@@ -153,7 +153,7 @@ void s5kgw3sp_sm7250_parse_module_name(struct cam_eeprom_ctrl_t *e_ctrl)
 
 	pr_info("%s :%d: before ratio %d\n", __func__, __LINE__, ratio);
 	if (ratio != 0)
-		ratio = (uint16_t)(1024.0 * 1024.0 / ratio);
+		ratio = (uint16_t)(1024 * 1024 / ratio);
 
 	pr_info("%s :%d: after ratio %d\n", __func__, __LINE__, ratio);
 
