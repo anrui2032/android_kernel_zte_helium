@@ -1,3 +1,4 @@
+#include <linux/i2c.h>
 #include "goodix_ts_core.h"
 #include "../tpd_ufp_mac.h"
 #include "../tpd_sys.h"
