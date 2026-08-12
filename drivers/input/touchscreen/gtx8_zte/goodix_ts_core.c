@@ -2266,13 +2266,13 @@ int goodix_ts_fb_notifier_callback(struct notifier_block *self,
 {
 	struct goodix_ts_core *core_data =
 		container_of(self, struct goodix_ts_core, fb_notifier);
-	struct fb_event *fb_event = data;
+	struct drm_panel_notifier *evdata = data;
 
-	if (fb_event && fb_event->data && core_data) {
+	if (evdata && evdata->data && core_data) {
 		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
 			/* before fb blank */
 		} else if (event == DRM_PANEL_EVENT_BLANK) {
-			int *blank = fb_event->data;
+			int *blank = evdata->data;
 
 			if (*blank == DRM_PANEL_BLANK_UNBLANK)
 				change_tp_state(ON);
